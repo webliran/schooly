@@ -3,15 +3,37 @@ import 'package:schooly/components/homework/TabedPupils.dart';
 import 'package:schooly/providers/classes.provider.dart';
 import 'package:provider/provider.dart';
 
+class DuplicateInfo extends StatelessWidget {
+  final lastClass;
+  final currentLesson;
+
+  DuplicateInfo({this.currentLesson, this.lastClass});
+  @override
+  Widget build(BuildContext context) {
+    if (currentLesson.classNames == lastClass.classNames &&
+        currentLesson.name == lastClass.name) {
+      print("equel");
+    }
+    return Container();
+  }
+}
+
 class ClassList extends StatefulWidget {
   @override
   _ClassListState createState() => _ClassListState();
 }
 
 class _ClassListState extends State<ClassList> {
-  _showMaterialDialog(classProviderHolder, BuildContext context, id) {
+  _classInfoModal(classProviderHolder, BuildContext context, id) {
     var currentLesson = classProviderHolder.dayInfo.data
         .singleWhere((element) => element.id == id);
+
+    int currentIndex = classProviderHolder.dayInfo.data
+        .indexWhere((element) => element.id == id);
+
+    var lastClass = currentIndex == 0
+        ? null
+        : classProviderHolder.dayInfo.data[currentIndex - 1];
 
     showDialog(
         context: context,
@@ -104,6 +126,8 @@ class _ClassListState extends State<ClassList> {
                               ),
                             )
                           : Container(),
+                      DuplicateInfo(
+                          currentLesson: currentLesson, lastClass: lastClass),
                       Padding(
                         padding: const EdgeInsets.symmetric(vertical: 16.0),
                         child: Center(
@@ -114,7 +138,7 @@ class _ClassListState extends State<ClassList> {
                                   _isLoadingModal = !_isLoadingModal;
                                 });
                                 await classProviderHolder
-                                    .saveCurrentClassInfo(currentLesson);
+                                    .saveCurrentLessonInfo(currentLesson);
                                 setState(() {
                                   _isLoadingModal = !_isLoadingModal;
                                 });
@@ -139,12 +163,12 @@ class _ClassListState extends State<ClassList> {
   @override
   Widget build(BuildContext context) {
     var classProviderHolder = context.watch<ClassProvider>();
-
     return SingleChildScrollView(
       child: ListView(
         scrollDirection: Axis.vertical,
         shrinkWrap: true,
-        children: classProviderHolder.dayInfo.data.length > 0
+        children: classProviderHolder.dayInfo != null &&
+                classProviderHolder.dayInfo.data.length > 0
             ? classProviderHolder.dayInfo.data.map<Widget>((item) {
                 Widget icon = item.voidReason != "" ||
                         item.disciplineEvents.length > 0 ||
@@ -170,8 +194,7 @@ class _ClassListState extends State<ClassList> {
                     trailing: GestureDetector(
                       child: Icon(Icons.more_vert),
                       onTap: () {
-                        _showMaterialDialog(
-                            classProviderHolder, context, item.id);
+                        _classInfoModal(classProviderHolder, context, item.id);
                       },
                     ),
                     onTap: () {
@@ -188,7 +211,7 @@ class _ClassListState extends State<ClassList> {
                 );
               }).toList()
             : [
-                Center(child: Text("לא נמצאו תוצאות")),
+                Center(child: Text("לא נמצאו שיעורים")),
               ],
       ),
     );

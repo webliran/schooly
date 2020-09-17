@@ -20,8 +20,8 @@ class _ChildrenListState extends State<ChildrenList> {
   List selectedUsers = [];
   List currentStudents;
 
-  _showDeleteConfirmDialog(BuildContext context, currentStudentId,
-      currentLessonId, classProviderHolder) {
+  _showDeleteConfirmDialog(BuildContext context, currentStudent, currentLesson,
+      classProviderHolder) {
     // set up the button
     Widget cancelButton = FlatButton(
       child: Text("ביטול"),
@@ -34,7 +34,7 @@ class _ChildrenListState extends State<ChildrenList> {
       onPressed: () async {
         Navigator.of(context).pop();
         await classProviderHolder.setPupilClass(
-            currentStudentId, true, currentLessonId);
+            currentStudent, true, currentLesson);
       },
     );
 
@@ -68,7 +68,7 @@ class _ChildrenListState extends State<ChildrenList> {
             actions: <Widget>[
               FlatButton(
                 child: Text("סיימתי"),
-                onPressed: () {
+                onPressed: () async {
                   Navigator.of(context).pop();
                 },
               ),
@@ -152,10 +152,9 @@ class _ChildrenListState extends State<ChildrenList> {
                                                     });
                                                     await classProviderHolder
                                                         .setPupilClass(
-                                                            currentStudents[i][
-                                                                'identitynumber'],
+                                                            currentStudents[i],
                                                             !value,
-                                                            currentId);
+                                                            currentLesson);
                                                     setState(() {
                                                       _isLoadingModal = false;
                                                     });
@@ -407,13 +406,15 @@ class _ChildrenListState extends State<ChildrenList> {
                       .toList();
 
                   return GestureDetector(
-                    onLongPress: () {
-                      _showDeleteConfirmDialog(
-                          context,
-                          currentLesson.pupils[i].student_login_id,
-                          widget.currentId,
-                          classProviderHolder);
-                    },
+                    onLongPress: currentLesson.isPartani
+                        ? () {
+                            _showDeleteConfirmDialog(
+                                context,
+                                currentLesson.pupils[i],
+                                currentLesson,
+                                classProviderHolder);
+                          }
+                        : null,
                     child: Column(
                       children: [
                         i == 0

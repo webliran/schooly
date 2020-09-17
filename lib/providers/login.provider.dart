@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:flutter/foundation.dart';
 import 'package:schooly/providers/schooly.provider.dart';
 import 'package:http/http.dart' as http;
@@ -5,7 +7,7 @@ import 'dart:convert' as convert;
 import 'package:fluttertoast/fluttertoast.dart';
 import 'package:schooly/providers/sharedstate.dart';
 import 'package:schooly/models/translate.dart';
-import 'package:schooly/providers/user.provider.dart';
+import 'package:flutter/material.dart';
 
 class LoginProvider extends SchoolyApi with ChangeNotifier {
   String step = 'loading';
@@ -80,31 +82,35 @@ class LoginProvider extends SchoolyApi with ChangeNotifier {
     String uuid = await SharedState().read("uuid");
     if (studentId == null) {
       studentId = await SharedState().read("studentId");
+      String jsonSelectedUser = await SharedState().read("selectedUser");
+      selectedUser = jsonDecode(jsonSelectedUser);
+      step = "logedin";
+      notifyListeners();
     } else {
       await SharedState().save("studentId", studentId.toString());
-    }
-    print('$url/?query=SelectUser&uuid=$uuid&studentid=$studentId');
-    var response = await http
-        .get('$url/?query=SelectUser&uuid=$uuid&studentid=$studentId');
-    if (response.statusCode == 200) {
-      var jsonResponse = convert.jsonDecode(response.body);
 
-      if (jsonResponse['success']) {
-        selectedUser = jsonResponse['data']
-            .where((item) => item['is_selected'].toString() == 'true')
-            .toList()[0];
+      var response = await http
+          .get('$url/?query=SelectUser&uuid=$uuid&studentid=$studentId');
+      if (response.statusCode == 200) {
+        var jsonResponse = convert.jsonDecode(response.body);
 
-        step = "logedin";
+        if (jsonResponse['success']) {
+          selectedUser = jsonResponse['data']
+              .where((item) => item['is_selected'].toString() == 'true')
+              .toList()[0];
+          await SharedState().save("selectedUser", jsonEncode(selectedUser));
+          step = "logedin";
+        } else {
+          msg = jsonResponse['Msg'];
+          showWebColoredToast();
+          logout();
+        }
       } else {
-        msg = jsonResponse['Msg'];
+        msg = 'NetworkError';
         showWebColoredToast();
-        logout();
       }
-    } else {
-      msg = 'NetworkError';
-      showWebColoredToast();
+      notifyListeners();
     }
-    notifyListeners();
   }
 
   void verifyVerifaction(String vcode) async {

@@ -59,7 +59,7 @@ class ClassProvider extends SchoolyApi with ChangeNotifier {
     notifyListeners();
   }
 
-  savecurrentLessonInfo(currentLesson) async {
+  saveCurrentLessonInfo(currentLesson) async {
     String id = currentLesson.id;
 
     var response = await Future.wait([
@@ -121,8 +121,7 @@ class ClassProvider extends SchoolyApi with ChangeNotifier {
     var filesToSend = "";
     var hFilesList = currentLesson.hFiles.where((item) =>
         FileSystemEntity.typeSync(item) == FileSystemEntityType.notFound);
-    print(hFilesList);
-    print(files);
+
     if (hFilesList.length > 0) {
       filesToSend = hFilesList.join(',');
     }
@@ -214,14 +213,32 @@ class ClassProvider extends SchoolyApi with ChangeNotifier {
     }
   }
 
-  setPupilClass(id, isRemove, lesson_id) async {
-    setShowPreloader();
+  setPupilClass(currentPupil, isRemove, currentLesson) async {
+    int id = isRemove
+        ? currentPupil.student_login_id
+        : currentPupil["identitynumber"];
+    if (isRemove) {
+      setShowPreloader();
+    }
     var addPartaniResponse = await http.get(
-        '$url/?query=SetPartani&uuid=$uuid&id=$id&isRemove=$isRemove&lesson_id=$lesson_id');
+        '$url/?query=SetPartani&uuid=$uuid&id=$id&isRemove=$isRemove&lesson_id=${currentLesson.id}');
+
     if (addPartaniResponse.statusCode == 200) {
       var addPartaniJsonResponse = convert.jsonDecode(addPartaniResponse.body);
+
       if (addPartaniJsonResponse['success']) {
-        await updateData();
+        if (isRemove) {
+          currentLesson.pupils
+              .removeWhere((item) => item.student_login_id == id);
+          setHidePreloader();
+        } else {
+          currentLesson.pupils.add(new Pupils(
+            student_login_id: id,
+            student_f_name: currentPupil["firstName"],
+            student_l_name: currentPupil["lastName"],
+          ));
+        }
+
         notifyListeners();
       } else {
         msg = 'NetworkError';

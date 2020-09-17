@@ -1,6 +1,9 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:path/path.dart' as path;
 import 'package:flutter_plugin_pdf_viewer/flutter_plugin_pdf_viewer.dart';
+import 'package:transparent_image/transparent_image.dart';
 
 class FileViewer extends StatelessWidget {
   String fileName;
@@ -31,13 +34,18 @@ class FileBuilder extends StatelessWidget {
     switch (path.extension(fileName)) {
       case ".jpg":
         {
-          return Image.network(
-            fileName,
-            fit: BoxFit.cover,
-            height: double.infinity,
-            width: double.infinity,
-            alignment: Alignment.center,
-          );
+          if (FileSystemEntity.typeSync(fileName) !=
+              FileSystemEntityType.notFound) {
+            return Center(child: Image.asset(fileName));
+          } else {
+            return Stack(children: <Widget>[
+              Center(child: CircularProgressIndicator()),
+              Center(
+                child: FadeInImage.memoryNetwork(
+                    placeholder: kTransparentImage, image: fileName),
+              ),
+            ]);
+          }
         }
         break;
       case ".pdf":

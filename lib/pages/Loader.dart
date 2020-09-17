@@ -31,7 +31,6 @@ class _LoaderState extends State<Loader> {
                 crossAxisAlignment: CrossAxisAlignment.center,
                 children: <Widget>[
                   RaisedButton(
-                    child: Text("hh"),
                     onPressed: () async {
                       await loginProviderHolder.logout();
                     },

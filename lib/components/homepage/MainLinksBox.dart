@@ -11,13 +11,18 @@ class MainLinksBox extends StatelessWidget {
     return Material(
       elevation: 4,
       child: Container(
-        width: double.infinity,
-        child: Wrap(
-          alignment: WrapAlignment.spaceBetween,
+        height: 90,
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
           children: loginProviderHolder['resources']['secondary_menu_buttons']
+              .where((item) => [
+                    "events",
+                    "messages",
+                    "homework_management",
+                    "galleries"
+                  ].contains(item["type_data"]))
               .map<Widget>((item) {
-            //print(item);
-            return LinkBox(item: item);
+            return Expanded(child: LinkBox(item: item));
           }).toList(),
         ),
       ),

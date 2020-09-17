@@ -1,9 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:schooly/components/global/PopupMenuMain.dart';
 import 'package:schooly/components/homework/ClassList.dart';
 import 'package:schooly/providers/classes.provider.dart';
 import 'package:schooly/providers/login.provider.dart';
-import 'package:schooly/providers/user.provider.dart';
+import 'package:intl/intl.dart';
 
 class HomeworkManagement extends StatefulWidget {
   @override
@@ -30,16 +31,18 @@ class _HomeworkManagementState extends State<HomeworkManagement> {
     var classProviderHolder = context.watch<ClassProvider>();
     var loginProviderHolder = context.watch<LoginProvider>();
 
+    formatDate(date) {
+      print(date);
+      final DateFormat formatter = DateFormat('dd/MM/yyyy');
+      final String formatted = formatter.format(date);
+      return formatted;
+    }
+
     return Scaffold(
       appBar: AppBar(
         title: Center(child: Text('ניהול שיעורים')),
         actions: <Widget>[
-          IconButton(
-            icon: Icon(Icons.exit_to_app),
-            onPressed: () {
-              loginProviderHolder.logout();
-            },
-          ),
+          PopUpMenu(),
         ],
       ),
       body:
@@ -63,13 +66,13 @@ class _HomeworkManagementState extends State<HomeworkManagement> {
                   children: <Widget>[
                     RaisedButton(
                       color: Colors.white,
-                      onPressed: classProviderHolder.showPreloader
-                          ? null
-                          : () {
-                              setState(() {
-                                classProviderHolder.substructDay();
-                              });
-                            },
+                      onPressed: () {
+                        setState(() {
+                          if (!classProviderHolder.showPreloader) {
+                            classProviderHolder.substructDay();
+                          }
+                        });
+                      },
                       child: Icon(
                         Icons.arrow_left,
                         size: 40,
@@ -83,7 +86,7 @@ class _HomeworkManagementState extends State<HomeworkManagement> {
                         await _selectDate(context);
                       },
                       child: Text(
-                        "${classProviderHolder.currentDate.toLocal()}"
+                        "${formatDate(classProviderHolder.currentDate)}"
                             .split(' ')[0],
                         style: TextStyle(fontSize: 20),
                       ),
@@ -93,13 +96,11 @@ class _HomeworkManagementState extends State<HomeworkManagement> {
                     ),
                     RaisedButton(
                       color: Colors.white,
-                      onPressed: classProviderHolder.showPreloader
-                          ? null
-                          : () {
-                              setState(() {
-                                classProviderHolder.addDay();
-                              });
-                            },
+                      onPressed: () {
+                        if (!classProviderHolder.showPreloader) {
+                          classProviderHolder.addDay();
+                        }
+                      },
                       child: Icon(
                         Icons.arrow_right,
                         size: 40,

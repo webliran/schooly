@@ -42,8 +42,8 @@ class _LoginState extends State<Login> {
                 key: _formKey,
                 child: Column(children: <Widget>[
                   TextFormField(
+                    keyboardType: TextInputType.number,
                     controller: idNumber,
-
                     style: TextStyle(
                       color: Colors.white,
                     ),

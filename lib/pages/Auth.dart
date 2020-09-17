@@ -9,7 +9,8 @@ class Auth extends StatefulWidget {
 }
 
 class _AuthState extends State<Auth> {
-  final formKey = GlobalKey<FormState>();
+  final secCode = TextEditingController();
+  final _formKey = GlobalKey<FormState>();
   bool _isLoading = false;
   bool _isLoadingModal = false;
   Widget jobTitle;
@@ -76,6 +77,7 @@ class _AuthState extends State<Auth> {
   @override
   Widget build(BuildContext context) {
     var loginProviderHolder = context.watch<LoginProvider>();
+
     return Stack(children: <Widget>[
       Image.asset(
         'assets/images/black.jpg',
@@ -91,79 +93,85 @@ class _AuthState extends State<Auth> {
             mainAxisAlignment: MainAxisAlignment.center,
             crossAxisAlignment: CrossAxisAlignment.center,
             children: <Widget>[
-              Text(
-                'קוד אימות',
-                maxLines: 3,
-                overflow: TextOverflow.ellipsis,
-                style: TextStyle(
-                    color: Colors.white,
-                    fontWeight: FontWeight.w600,
-                    fontSize: 30),
-              ),
               SizedBox(
                 height: 50.00,
               ),
               Padding(
                 padding:
                     const EdgeInsets.symmetric(vertical: 8.0, horizontal: 30),
-                child: Directionality(
-                  textDirection: TextDirection.ltr,
-                  child: PinCodeTextField(
-                    dialogConfig: DialogConfig(
-                        affirmativeText: "הדבק",
-                        negativeText: "ביטול",
-                        dialogContent: "אתה רוצה להדביק את קוד האימות ",
-                        dialogTitle: "קוד אימות"),
-                    length: 6,
-                    obsecureText: false,
-                    animationType: AnimationType.fade,
-                    backgroundColor: Colors.transparent,
-                    textStyle: TextStyle(color: Colors.white, fontSize: 20),
-                    pinTheme: PinTheme(
-                        shape: PinCodeFieldShape.box,
-                        borderRadius: BorderRadius.circular(5),
-                        fieldHeight: 50,
-                        fieldWidth: 40,
-                        activeColor: Colors.white,
-                        inactiveColor: Colors.yellow[100]),
-                    animationDuration: Duration(milliseconds: 300),
-                    enableActiveFill: false,
-                    onCompleted: (v) async {
-                      setState(() {
-                        _isLoading = true;
-                      });
+                child: Form(
+                  key: _formKey,
+                  child: Column(children: <Widget>[
+                    TextFormField(
+                      keyboardType: TextInputType.number,
+                      controller: secCode,
+                      style: TextStyle(
+                        color: Colors.white,
+                      ),
+                      // The validator receives the text that the user has entered.
+                      validator: (value) {
+                        if (value.isEmpty) {
+                          return 'שכחת להזין קוד';
+                        }
+                        return null;
+                      },
+                      decoration: InputDecoration(
+                        focusedBorder: OutlineInputBorder(
+                          borderSide: BorderSide(color: Colors.white),
+                        ),
+                        enabledBorder: OutlineInputBorder(
+                          borderSide: BorderSide(color: Colors.white),
+                        ),
+                        labelText: 'קוד אימות',
+                        border: new OutlineInputBorder(
+                          borderRadius: new BorderRadius.circular(25.0),
+                          borderSide: new BorderSide(),
+                        ),
+                        labelStyle:
+                            TextStyle(color: Colors.white, fontSize: 18),
+                        errorStyle:
+                            TextStyle(color: Colors.red[500], fontSize: 18),
+                      ),
+                    ),
+                    SizedBox(
+                      height: 10.00,
+                    ),
+                    SizedBox(
+                      width: double.infinity,
+                      child: RaisedButton(
+                        onPressed: () async {
+                          if (_formKey.currentState.validate()) {
+                            setState(() {
+                              _isLoading = true;
+                            });
 
-                      await loginProviderHolder.verifyVerifaction(v);
+                            await loginProviderHolder
+                                .verifyVerifaction(secCode.text);
 
-                      if (loginProviderHolder.roles.length > 0) {
-                        _showMaterialDialog(loginProviderHolder, context);
-                      }
-                      setState(() {
-                        _isLoading = false;
-                      });
-                    },
-                    onChanged: (v) {
-                      //print(value);
-                      //loginProviderHolder.verifyVerifaction(v);
-                    },
-                    beforeTextPaste: (text) {
-                      //print("Allowing to paste $text");
-                      //if you return true then it will show the paste confirmation dialog. Otherwise if false, then nothing will happen.
-                      //but you can show anything you want here, like your pop up saying wrong paste format or etc
-                      return true;
-                    },
-                  ),
+                            if (loginProviderHolder.roles.length > 1) {
+                              _showMaterialDialog(loginProviderHolder, context);
+                            } else {
+                              await loginProviderHolder.selectUser(
+                                  loginProviderHolder.roles[0]['studentid']);
+                            }
+                            setState(() {
+                              _isLoading = false;
+                            });
+                          }
+                        },
+                        child: Text(
+                          'אימות',
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 24,
+                          ),
+                        ),
+                      ),
+                    ),
+                    _isLoading ? LinearProgressIndicator() : SizedBox(),
+                  ]),
                 ),
               ),
-              FlatButton(
-                onPressed: () {
-                  loginProviderHolder.loginUser(loginProviderHolder.userId);
-                },
-                child: Text(
-                  "לא הגיע? שלח שוב",
-                ),
-              ),
-              _isLoading ? LinearProgressIndicator() : SizedBox(),
             ],
           ),
         ),

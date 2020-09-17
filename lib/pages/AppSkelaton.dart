@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:schooly/components/global/PopupMenuMain.dart';
 import 'package:schooly/components/webview/WebViewHolder.dart';
 import 'package:schooly/pages/home.dart';
 import 'package:schooly/providers/login.provider.dart';
@@ -24,12 +25,7 @@ class _MainAppSkelatonState extends State<MainAppSkelaton> {
       appBar: AppBar(
         title: Center(child: Text(widget.title)),
         actions: <Widget>[
-          IconButton(
-            icon: Icon(Icons.exit_to_app),
-            onPressed: () async {
-              await loginProviderHolder.logout();
-            },
-          ),
+          PopUpMenu(),
         ],
       ),
       body: widget.child,
