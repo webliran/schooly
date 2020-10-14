@@ -54,13 +54,18 @@ class Data {
   bool isVoid;
   String voidReason;
   final List<Pupils> pupils;
-  final List<DisciplineEvents> disciplineEvents;
+  List<DisciplineEvents> disciplineEvents;
   bool isPartani;
   List hFiles;
   List sFiles;
   String sContent;
   String hContent;
-
+  @JsonKey(defaultValue: false)
+  bool toDuplicate;
+  @JsonKey(defaultValue: true)
+  bool toDuplicateSubject;
+  @JsonKey(defaultValue: true)
+  bool toDuplicateMissing;
   Data(
       {this.name,
       this.id,
@@ -75,7 +80,10 @@ class Data {
       this.hContent,
       this.hFiles,
       this.sContent,
-      this.sFiles});
+      this.sFiles,
+      this.toDuplicate,
+      this.toDuplicateSubject,
+      this.toDuplicateMissing});
 
   factory Data.fromJson(Map<String, dynamic> data) => _$DataFromJson(data);
 }

@@ -1,5 +1,5 @@
 import 'package:flutter/foundation.dart';
-import 'package:schooly/models/dayInfo.dart';
+import 'package:schooly/models/classeList/dayInfo.dart';
 import 'package:schooly/providers/schooly.provider.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert' as convert;
@@ -16,7 +16,6 @@ class ClassProvider extends SchoolyApi with ChangeNotifier {
   DateTime currentDate;
   DayInfo dayInfo;
   ClassesList classesList;
-
   bool idle = false;
   bool showPreloader = false;
 
@@ -59,8 +58,45 @@ class ClassProvider extends SchoolyApi with ChangeNotifier {
     notifyListeners();
   }
 
-  saveCurrentLessonInfo(currentLesson) async {
+  setToDuplicateSubject(currentLesson, value) {
+    currentLesson.toDuplicateSubject = value;
+    notifyListeners();
+  }
+
+  setToDuplicateMissing(currentLesson, value) {
+    currentLesson.toDuplicateMissing = value;
+    notifyListeners();
+  }
+
+  setToDuplicate(currentLesson, value) {
+    currentLesson.toDuplicate = value;
+    notifyListeners();
+  }
+
+  saveCurrentLessonInfo(currentLesson, lastClass) async {
     String id = currentLesson.id;
+    if (currentLesson.toDuplicate) {
+      if (currentLesson.toDuplicateSubject) {
+        currentLesson.subject = lastClass.subject;
+      }
+      if (currentLesson.toDuplicateMissing) {
+        for (var i = 0; lastClass.disciplineEvents.length > i; i++) {
+          print(lastClass.disciplineEvents[i].kind);
+          if (lastClass.disciplineEvents[i].kind == "1") {
+            var disciplineEventRes = await http.get(
+                '$url/?query=SetDisciplineEvent&uuid=$uuid&_id=$id&student_login_id=${lastClass.disciplineEvents[i].student_login_id}&id=${lastClass.disciplineEvents[i].kind}&value=${lastClass.disciplineEvents[i].value}');
+            if (disciplineEventRes.statusCode == 200) {
+              var disciplineEventJsonResponse =
+                  convert.jsonDecode(disciplineEventRes.body);
+              if (disciplineEventJsonResponse['success']) {
+                currentLesson.disciplineEvents
+                    .add(lastClass.disciplineEvents[i]);
+              }
+            }
+          }
+        }
+      }
+    }
 
     var response = await Future.wait([
       http.get(
@@ -134,7 +170,6 @@ class ClassProvider extends SchoolyApi with ChangeNotifier {
       filesToSend += files;
     }
 
-    print('hFiles=${filesToSend}');
     var updateTimeTableResponse = await http.post(
         '$url/?query=SetTimeTable&uuid=$uuid&_id=${currentLesson.id}&subject=${currentLesson.subject}&hContent=${currentLesson.hContent}&hFiles=${filesToSend}');
 

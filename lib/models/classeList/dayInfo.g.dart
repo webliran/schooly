@@ -84,6 +84,9 @@ Data _$DataFromJson(Map<String, dynamic> json) {
     hFiles: json['hFiles'] as List,
     sContent: json['sContent'] as String,
     sFiles: json['sFiles'] as List,
+    toDuplicate: json['toDuplicate'] as bool ?? false,
+    toDuplicateSubject: json['toDuplicateSubject'] as bool ?? true,
+    toDuplicateMissing: json['toDuplicateMissing'] as bool ?? true,
   );
 }
 
@@ -102,6 +105,9 @@ Map<String, dynamic> _$DataToJson(Data instance) => <String, dynamic>{
       'sFiles': instance.sFiles,
       'sContent': instance.sContent,
       'hContent': instance.hContent,
+      'toDuplicate': instance.toDuplicate,
+      'toDuplicateSubject': instance.toDuplicateSubject,
+      'toDuplicateMissing': instance.toDuplicateMissing,
     };
 
 EventTypes _$EventTypesFromJson(Map<String, dynamic> json) {

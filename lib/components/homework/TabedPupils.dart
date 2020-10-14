@@ -37,10 +37,10 @@ class _TabedPupilsState extends State<TabedPupils> {
                 padding: const EdgeInsets.only(top: 10.0, bottom: 10.0),
                 child: Text('שיעורי בית'),
               ),
-              Padding(
+              /*Padding(
                 padding: const EdgeInsets.only(top: 10.0, bottom: 10.0),
                 child: Text('תכנון שבועי'),
-              ),
+              ),*/
             ],
           ),
           title: Text(currentDayInfo.name),
@@ -49,7 +49,7 @@ class _TabedPupilsState extends State<TabedPupils> {
           children: [
             ChildrenList(currentId: currentDayInfo.id),
             HomeWork(currentId: currentDayInfo.id),
-            Icon(Icons.directions_bike),
+            /*Icon(Icons.directions_bike),*/
           ],
         ),
       ),

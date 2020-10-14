@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 import 'package:schooly/pages/WraperMain.dart';
 import 'package:schooly/providers/classes.provider.dart';
 import 'package:schooly/providers/login.provider.dart';
+import 'package:schooly/providers/mail.provider.dart';
 import 'package:schooly/providers/user.provider.dart';
 
 void main() {
@@ -13,6 +14,7 @@ void main() {
         ChangeNotifierProvider(create: (_) => LoginProvider()),
         ChangeNotifierProvider(create: (_) => UserProvider()),
         ChangeNotifierProvider(create: (_) => ClassProvider()),
+        ChangeNotifierProvider(create: (_) => MailProvider()),
       ],
       child: MyApp(),
     ),

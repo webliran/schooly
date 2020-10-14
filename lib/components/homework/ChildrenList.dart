@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:schooly/models/dayInfo.dart';
+import 'package:schooly/models/classeList/dayInfo.dart';
 import 'package:schooly/providers/classes.provider.dart';
 import 'package:schooly/providers/login.provider.dart';
 import 'package:provider/provider.dart';
@@ -304,9 +304,10 @@ class _ChildrenListState extends State<ChildrenList> {
       return widget;
     }
 
-    _getShownBody(index) {
+    _getShownBody(index, isPartani) {
+      int loops = isPartani ? 5 : 4;
       List<Widget> widgets = [];
-      for (var i = 0; i < 4; i++) {
+      for (var i = 0; i < loops; i++) {
         if (i == 0) {
           widgets.add(Container(
             width: 80,
@@ -318,15 +319,28 @@ class _ChildrenListState extends State<ChildrenList> {
             ),
           ));
         }
-        widgets.add(_getCellInfo(i, index));
+        if (i != 4) {
+          widgets.add(_getCellInfo(i, index));
+        }
+
+        if (isPartani && i == 4) {
+          widgets.add(GestureDetector(
+            child: Icon(Icons.delete_forever, color: Colors.red),
+            onTap: () {
+              _showDeleteConfirmDialog(context, currentLesson.pupils[index],
+                  currentLesson, classProviderHolder);
+            },
+          ));
+        }
       }
 
       return widgets;
     }
 
-    _getHeader() {
+    _getHeader(isPartani) {
+      int loops = isPartani ? 5 : 4;
       List<Widget> widgets = [];
-      for (var i = 0; i < 4; i++) {
+      for (var i = 0; i < loops; i++) {
         if (i == 0) {
           widgets.add(Container(
             width: 80,
@@ -336,10 +350,15 @@ class _ChildrenListState extends State<ChildrenList> {
             ),
           ));
         }
-        widgets.add(Text(
-          classProviderHolder.dayInfo.eventTypes[i].name,
-          textAlign: TextAlign.right,
-        ));
+        if (i != 4) {
+          widgets.add(Text(
+            classProviderHolder.dayInfo.eventTypes[i].name,
+            textAlign: TextAlign.right,
+          ));
+        }
+        if (isPartani && i == 4) {
+          widgets.add(Container());
+        }
       }
       return widgets;
     }
@@ -386,16 +405,6 @@ class _ChildrenListState extends State<ChildrenList> {
             : Container(),
         Column(
           children: [
-            currentLesson.isPartani
-                ? Container(
-                    color: Colors.grey[200],
-                    child: Padding(
-                      padding: const EdgeInsets.all(8.0),
-                      child: Text(
-                          'ניתן להוסיף תלמיד בלחיצה על הפלוס הכחול ניתן להסיר תלמיד בלחיצה רציפה על שמו'),
-                    ),
-                  )
-                : Container(),
             Expanded(
               child: ListView.builder(
                 itemCount: currentLesson.pupils.length,
@@ -405,48 +414,38 @@ class _ChildrenListState extends State<ChildrenList> {
                       .isAbsent(currentLesson.pupils[i])
                       .toList();
 
-                  return GestureDetector(
-                    onLongPress: currentLesson.isPartani
-                        ? () {
-                            _showDeleteConfirmDialog(
-                                context,
-                                currentLesson.pupils[i],
-                                currentLesson,
-                                classProviderHolder);
-                          }
-                        : null,
-                    child: Column(
-                      children: [
-                        i == 0
-                            ? Padding(
-                                padding: EdgeInsets.only(
-                                    right: 10, left: 70, top: 20, bottom: 5),
-                                child: Row(
-                                    mainAxisAlignment:
-                                        MainAxisAlignment.spaceBetween,
-                                    children: _getHeader().toList()),
-                              )
-                            : Container(),
-                        ListTileTheme(
-                          contentPadding: EdgeInsets.all(0),
-                          child: ExpansionTile(
-                            title: isAbsent.length == 0
-                                ? Row(
-                                    mainAxisAlignment:
-                                        MainAxisAlignment.spaceEvenly,
-                                    children: _getShownBody(i).toList())
-                                : _getShownBodyAbsent(
-                                    i, currentLesson.isPartani),
-                            backgroundColor: Theme.of(context)
-                                .accentColor
-                                .withOpacity(0.025),
-                            children: isAbsent.length == 0
-                                ? _getHiddenBody(i).toList()
-                                : _getHiddenBodyAbsent(isAbsent),
-                          ),
-                        )
-                      ],
-                    ),
+                  return Column(
+                    children: [
+                      i == 0
+                          ? Padding(
+                              padding: EdgeInsets.only(
+                                  right: 10, left: 70, top: 20, bottom: 5),
+                              child: Row(
+                                  mainAxisAlignment:
+                                      MainAxisAlignment.spaceBetween,
+                                  children: _getHeader(currentLesson.isPartani)
+                                      .toList()),
+                            )
+                          : Container(),
+                      ListTileTheme(
+                        contentPadding: EdgeInsets.all(0),
+                        child: ExpansionTile(
+                          title: isAbsent.length == 0
+                              ? Row(
+                                  mainAxisAlignment:
+                                      MainAxisAlignment.spaceEvenly,
+                                  children:
+                                      _getShownBody(i, currentLesson.isPartani)
+                                          .toList())
+                              : _getShownBodyAbsent(i, currentLesson.isPartani),
+                          backgroundColor:
+                              Theme.of(context).accentColor.withOpacity(0.025),
+                          children: isAbsent.length == 0
+                              ? _getHiddenBody(i).toList()
+                              : _getHiddenBodyAbsent(isAbsent),
+                        ),
+                      )
+                    ],
                   );
                 },
               ),

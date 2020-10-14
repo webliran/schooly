@@ -1,3 +1,5 @@
+import 'package:collection/collection.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:schooly/components/homework/TabedPupils.dart';
 import 'package:schooly/providers/classes.provider.dart';
@@ -6,13 +8,80 @@ import 'package:provider/provider.dart';
 class DuplicateInfo extends StatelessWidget {
   final lastClass;
   final currentLesson;
+  final classProviderHolder;
+  DuplicateInfo({this.currentLesson, this.lastClass, this.classProviderHolder});
 
-  DuplicateInfo({this.currentLesson, this.lastClass});
+  deepEq(listA, listB) {
+    bool equal = true;
+    for (var i = 0; i < listA.length; i++) {
+      List isExsist = listB
+          .where((item) => item.student_login_id == listA[i].student_login_id)
+          .toList();
+
+      if (isExsist.length == 0) {
+        equal = false;
+      }
+    }
+    return equal;
+  }
+
   @override
   Widget build(BuildContext context) {
-    if (currentLesson.classNames == lastClass.classNames &&
-        currentLesson.name == lastClass.name) {
-      print("equel");
+    var classProviderHolder = context.watch<ClassProvider>();
+    if (lastClass != null &&
+        currentLesson.classNames == lastClass.classNames &&
+        currentLesson.name == lastClass.name &&
+        currentLesson.classNames == lastClass.classNames &&
+        deepEq(currentLesson.pupils, lastClass.pupils) &&
+        (lastClass.subject != "" || lastClass.disciplineEvents.length != 0)) {
+      return Column(
+        children: [
+          CheckboxListTile(
+            value: currentLesson.toDuplicate,
+            title: const Text(
+              'העתק משיעור קודם',
+              style: TextStyle(fontSize: 13),
+            ),
+            onChanged: (bool value) {
+              classProviderHolder.setToDuplicate(currentLesson, value);
+            },
+            secondary: const Icon(Icons.content_copy),
+          ),
+          currentLesson.toDuplicate
+              ? Padding(
+                  padding: const EdgeInsets.only(right: 8, left: 8),
+                  child: Column(
+                    children: [
+                      CheckboxListTile(
+                        value: currentLesson.toDuplicateSubject,
+                        title: const Text(
+                          'העתק נושא השיעור',
+                          style: TextStyle(fontSize: 13),
+                        ),
+                        onChanged: (bool value) {
+                          classProviderHolder.setToDuplicateSubject(
+                              currentLesson, value);
+                        },
+                        secondary: const Icon(Icons.title),
+                      ),
+                      CheckboxListTile(
+                        value: currentLesson.toDuplicateMissing,
+                        title: const Text(
+                          'העתק חיסורים',
+                          style: TextStyle(fontSize: 13),
+                        ),
+                        onChanged: (bool value) {
+                          classProviderHolder.setToDuplicateMissing(
+                              currentLesson, value);
+                        },
+                        secondary: const Icon(Icons.school),
+                      )
+                    ],
+                  ),
+                )
+              : Container()
+        ],
+      );
     }
     return Container();
   }
@@ -30,7 +99,7 @@ class _ClassListState extends State<ClassList> {
 
     int currentIndex = classProviderHolder.dayInfo.data
         .indexWhere((element) => element.id == id);
-
+    currentLesson.toDuplicate = false;
     var lastClass = currentIndex == 0
         ? null
         : classProviderHolder.dayInfo.data[currentIndex - 1];
@@ -127,7 +196,10 @@ class _ClassListState extends State<ClassList> {
                             )
                           : Container(),
                       DuplicateInfo(
-                          currentLesson: currentLesson, lastClass: lastClass),
+                        currentLesson: currentLesson,
+                        lastClass: lastClass,
+                        classProviderHolder: classProviderHolder,
+                      ),
                       Padding(
                         padding: const EdgeInsets.symmetric(vertical: 16.0),
                         child: Center(
@@ -137,8 +209,9 @@ class _ClassListState extends State<ClassList> {
                                 setState(() {
                                   _isLoadingModal = !_isLoadingModal;
                                 });
-                                await classProviderHolder
-                                    .saveCurrentLessonInfo(currentLesson);
+                                await classProviderHolder.saveCurrentLessonInfo(
+                                    currentLesson, lastClass);
+
                                 setState(() {
                                   _isLoadingModal = !_isLoadingModal;
                                 });

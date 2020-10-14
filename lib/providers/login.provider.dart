@@ -69,7 +69,6 @@ class LoginProvider extends SchoolyApi with ChangeNotifier {
   void isLogedIn() async {
     var uuid = await SharedState().check('uuid');
     var studentId = await SharedState().check('studentId');
-
     if (!studentId || !uuid) {
       step = 'offline';
       notifyListeners();
@@ -80,10 +79,14 @@ class LoginProvider extends SchoolyApi with ChangeNotifier {
 
   selectUser(studentId) async {
     String uuid = await SharedState().read("uuid");
+    print(uuid);
     if (studentId == null) {
       studentId = await SharedState().read("studentId");
       String jsonSelectedUser = await SharedState().read("selectedUser");
       selectedUser = jsonDecode(jsonSelectedUser);
+      await SharedState().save("firstName", selectedUser['firstName']);
+      await SharedState().save("lastName", selectedUser['lastName']);
+
       step = "logedin";
       notifyListeners();
     } else {
@@ -136,12 +139,12 @@ class LoginProvider extends SchoolyApi with ChangeNotifier {
     notifyListeners();
   }
 
-  void sendVerifection([String mask]) async {
-    String currentMask = mask != "" ? mask : mask;
-    var response = await http
-        .get('$url/?query=UserLogin&username=$userId&mask=$currentMask');
+  void sendVerifection(String mask) async {
+    var response =
+        await http.get('$url/?query=UserLogin&username=$userId&mask=$mask');
     if (response.statusCode == 200) {
       var jsonResponse = convert.jsonDecode(response.body);
+      print(jsonResponse);
       if (jsonResponse['success']) {
         await SharedState().save("uuid", jsonResponse['uuid']);
         step = 'auth';
@@ -165,14 +168,14 @@ class LoginProvider extends SchoolyApi with ChangeNotifier {
       var jsonResponse = convert.jsonDecode(response.body);
 
       if (jsonResponse['success']) {
-        if (jsonResponse['data'].length > 1) {
-          step = 'select_verifection_option';
-          verifectionOptions = jsonResponse['data'];
-        } else {
-          mode = jsonResponse['data'][0]['mode'];
-          mask = jsonResponse['data'][0]['mask'];
-          sendVerifection();
-        }
+        //if (jsonResponse['data'].length > 1) {
+        step = 'select_verifection_option';
+        verifectionOptions = jsonResponse['data'];
+        //} else {
+        //  mode = jsonResponse['data'][0]['mode'];
+        //  mask = jsonResponse['data'][0]['mask'];
+        //  sendVerifection();
+        // }
       } else {
         msg = jsonResponse['Msg'];
         showWebColoredToast();

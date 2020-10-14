@@ -44,7 +44,6 @@ class _HomeWorkState extends State<HomeWork> {
     final pickedFile = await picker.getImage(source: ImageSource.camera);
   }
 
-  @override
   SafeArea buildSpeedDial(classProviderHolder, currentClass) {
     return SafeArea(
       child: Directionality(
@@ -54,8 +53,7 @@ class _HomeWorkState extends State<HomeWork> {
           animatedIcon: AnimatedIcons.add_event,
           animatedIconTheme: IconThemeData(size: 30.0),
           // child: Icon(Icons.add),
-          onOpen: () => print('OPENING DIAL'),
-          onClose: () => print('DIAL CLOSED'),
+
           visible: dialVisible,
           curve: Curves.bounceIn,
           children: [
