@@ -214,8 +214,6 @@ class ClassProvider extends SchoolyApi with ChangeNotifier {
     for (var i = 0; i < currentLesson.hFiles.length; i++) {
       if (FileSystemEntity.typeSync(currentLesson.hFiles[i]) !=
           FileSystemEntityType.notFound) {
-        print(currentLesson.hFiles[i]);
-
         request.files.add(http.MultipartFile(
             '[${i}]',
             File(currentLesson.hFiles[i]).readAsBytes().asStream(),
@@ -238,6 +236,7 @@ class ClassProvider extends SchoolyApi with ChangeNotifier {
             responseFileUploadJson['fileNames'], currentLesson);
         await updateData();
         notifyListeners();
+        return true;
       } else {
         msg = 'NetworkError';
         showWebColoredToast();

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_tags/flutter_tags.dart';
 import 'package:schooly/components/fileviewer/FileViewer.dart';
 import 'package:schooly/components/global/PopupMenuMain.dart';
 import 'package:intl/intl.dart';
@@ -56,20 +57,27 @@ class messegePopOut extends StatelessWidget {
                   ],
                 ),
                 Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                      children: [
-                        SizedBox(
-                          width: 5,
-                        ),
-                        info.recipients.length > 0
-                            ? Text(
-                                'אל: ${info.recipients[0].firstName} ${info.recipients[0].lastName}',
-                              )
-                            : Container(),
-                      ],
+                    Text('אל: '),
+                    Expanded(
+                      child: Tags(
+                          horizontalScroll: true,
+                          itemCount: info.recipients.length,
+                          itemBuilder: (index) {
+                            return ItemTags(
+                              textStyle: TextStyle(
+                                fontSize: 12,
+                              ),
+                              activeColor: Colors.green[400],
+                              color: Colors.green[400],
+                              textActiveColor: Colors.white,
+                              textColor: Colors.white,
+                              index: index,
+                              removeButton: null,
+                              title:
+                                  ' ${info.recipients[index].firstName} ${info.recipients[index].lastName} ',
+                            );
+                          }),
                     ),
                   ],
                 ),

@@ -41,7 +41,11 @@ Message _$MessageFromJson(Map<String, dynamic> json) {
     lastName: json['lastName'] as String,
     wasRead: json['wasRead'] as int,
     rownum: json['rownum'] as int,
-  );
+    canReply: json['canReply'] as bool ?? true,
+    canReplyAll: json['canReplyAll'] as bool,
+  )
+    ..groups = _fromJsonStringToList(json['groups'])
+    ..tags = _fromJsonStringToListFirst(json['tags']);
 }
 
 Map<String, dynamic> _$MessageToJson(Message instance) => <String, dynamic>{
@@ -54,12 +58,16 @@ Map<String, dynamic> _$MessageToJson(Message instance) => <String, dynamic>{
       'content': instance.content,
       'fromID': instance.fromID,
       'date': instance.date?.toIso8601String(),
+      'groups': instance.groups,
+      'tags': instance.tags,
       'attachedFile': instance.attachedFile,
       'lastName': instance.lastName,
       'attachedFile3': instance.attachedFile3,
       'attachedFile2': instance.attachedFile2,
       'wasRead': instance.wasRead,
       'rownum': instance.rownum,
+      'canReplyAll': instance.canReplyAll,
+      'canReply': instance.canReply,
     };
 
 MessageListOut _$MessageListOutFromJson(Map<String, dynamic> json) {
@@ -89,10 +97,13 @@ MessageOut _$MessageOutFromJson(Map<String, dynamic> json) {
     attachedFile: json['attachedFile'] as String,
     attachedFile2: json['attachedFile2'] as String,
     attachedFile3: json['attachedFile3'] as String,
-  )..recipients = (json['recipients'] as List)
-      ?.map((e) =>
-          e == null ? null : Recipiention.fromJson(e as Map<String, dynamic>))
-      ?.toList();
+    filesWereAttached: json['filesWereAttached'] as bool,
+  )
+    ..tags = _fromJsonStringToListFirst(json['tags'])
+    ..recipients = (json['recipients'] as List)
+        ?.map((e) =>
+            e == null ? null : Recipiention.fromJson(e as Map<String, dynamic>))
+        ?.toList();
 }
 
 Map<String, dynamic> _$MessageOutToJson(MessageOut instance) =>
@@ -100,7 +111,9 @@ Map<String, dynamic> _$MessageOutToJson(MessageOut instance) =>
       'messageID': instance.messageID,
       'subject': instance.subject,
       'content': instance.content,
+      'filesWereAttached': instance.filesWereAttached,
       'date': instance.date?.toIso8601String(),
+      'tags': instance.tags,
       'attachedFile': instance.attachedFile,
       'attachedFile3': instance.attachedFile3,
       'attachedFile2': instance.attachedFile2,
@@ -141,11 +154,15 @@ MailTag _$MailTagFromJson(Map<String, dynamic> json) {
   return MailTag(
     name: json['name'] as String,
     id: json['id'] as int,
+    color: json['color'] as String,
+    backgroundColor: json['backgroundColor'] as String,
   );
 }
 
 Map<String, dynamic> _$MailTagToJson(MailTag instance) => <String, dynamic>{
       'name': instance.name,
+      'color': instance.color,
+      'backgroundColor': instance.backgroundColor,
       'id': instance.id,
     };
 
@@ -198,7 +215,7 @@ Member _$MemberFromJson(Map<String, dynamic> json) {
     identitynumber: json['identitynumber'],
     lastName: json['lastName'] as String,
     student_id: json['student_id'],
-  )..selected = json['selected'] as bool ?? true;
+  )..selected = json['selected'] as bool ?? false;
 }
 
 Map<String, dynamic> _$MemberToJson(Member instance) => <String, dynamic>{

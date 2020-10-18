@@ -1,3 +1,5 @@
+import 'dart:ui';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:fluttertoast/fluttertoast.dart';
@@ -8,6 +10,7 @@ import 'package:schooly/providers/mail.provider.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter_speed_dial/flutter_speed_dial.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:flutter_tags/flutter_tags.dart';
 
 showToastUpload(msg) {
   Fluttertoast.showToast(
@@ -21,8 +24,13 @@ showToastUpload(msg) {
 class NewMessege extends StatefulWidget {
   final bool reply;
   final bool replyToAll;
-  final messegeId;
-  NewMessege({this.reply, this.replyToAll, this.messegeId});
+  final messegeInfo;
+  final prevMailProviderHolder;
+  NewMessege(
+      {this.reply,
+      this.replyToAll,
+      this.messegeInfo,
+      this.prevMailProviderHolder});
 
   @override
   _NewMessegeState createState() => _NewMessegeState();
@@ -30,8 +38,7 @@ class NewMessege extends StatefulWidget {
 
 class _NewMessegeState extends State<NewMessege> {
   final picker = ImagePicker();
-  List filesPaths = [];
-  List to = [];
+
   int tag;
   var subject = TextEditingController();
   var content = TextEditingController();
@@ -54,42 +61,76 @@ class _NewMessegeState extends State<NewMessege> {
                       children: [
                         new CheckboxListTile(
                           secondary: GestureDetector(
-                              child: Icon(Icons.arrow_drop_down_circle),
-                              onTap: () {
-                                mailProviderHolder
+                              child: Icon(item.shown
+                                  ? Icons.keyboard_arrow_up
+                                  : Icons.keyboard_arrow_down),
+                              onTap: () async {
+                                await mailProviderHolder
                                     .setGroupShownHidden(item.key);
                               }),
                           controlAffinity: ListTileControlAffinity.leading,
                           title: new Text(item.name),
                           value: item.selected,
-                          onChanged: (bool value) {
-                            mailProviderHolder.setGroupSelected(item.key);
+                          onChanged: (bool value) async {
+                            await mailProviderHolder.setGroupSelected(item.key);
                           },
                         ),
-                        Container(
-                            height: 200,
-                            child: item.shown
-                                ? ListView(
-                                    children: mailProviderHolder
-                                        .GroupMembersList[item.key].data
-                                        .map<Widget>(
-                                          (elem) => CheckboxListTile(
-                                            controlAffinity:
-                                                ListTileControlAffinity.leading,
-                                            title: new Text(
-                                                '${elem.firstName} ${elem.lastName}'),
-                                            value: elem.selected,
-                                            onChanged: (bool value) {},
-                                          ),
-                                        )
-                                        .toList())
-                                : Container())
+                        item.shown
+                            ? Padding(
+                                padding: const EdgeInsets.only(right: 20),
+                                child: Container(
+                                    height: 200,
+                                    child: mailProviderHolder.GroupMembersList[
+                                                    item.key] !=
+                                                null &&
+                                            mailProviderHolder
+                                                    .GroupMembersList[item.key]
+                                                    .data
+                                                    .length >
+                                                0
+                                        ? ListView(
+                                            children: mailProviderHolder
+                                                .GroupMembersList[item.key].data
+                                                .map<Widget>(
+                                                  (elem) => Row(
+                                                    mainAxisAlignment:
+                                                        MainAxisAlignment.start,
+                                                    children: [
+                                                      Checkbox(
+                                                        value: elem.selected,
+                                                        onChanged:
+                                                            (bool value) {
+                                                          mailProviderHolder
+                                                              .setMemberSelected(
+                                                                  item.key,
+                                                                  elem.identitynumber);
+                                                        },
+                                                      ),
+                                                      Text(
+                                                          '${elem.firstName} ${elem.lastName}',
+                                                          style: TextStyle(
+                                                              fontSize: 14)),
+                                                    ],
+                                                  ),
+                                                )
+                                                .toList())
+                                        : Center(
+                                            child:
+                                                CircularProgressIndicator())),
+                              )
+                            : Container()
                       ],
                     );
                   }).toList(),
                 )
               : CircularProgressIndicator();
         });
+  }
+
+  @override
+  void setState(fn) {
+    widget.prevMailProviderHolder.clearRecap();
+    super.setState(fn);
   }
 
   @override
@@ -106,10 +147,9 @@ class _NewMessegeState extends State<NewMessege> {
             icon: Icon(Icons.attachment),
             onPressed: () async {
               var filesPathsRes = await FilePicker.getFilePath();
-              if (filesPaths == null || filesPaths.length < 3) {
-                setState(() {
-                  filesPaths.add(filesPathsRes);
-                });
+              if (mailProviderHolder.filePathes != null ||
+                  mailProviderHolder.filePathes.length < 3) {
+                mailProviderHolder.addToFilePath(filesPathsRes);
               } else {
                 showToastUpload("עד 3 קבצים");
               }
@@ -120,10 +160,9 @@ class _NewMessegeState extends State<NewMessege> {
             onPressed: () async {
               final pickedFile =
                   await picker.getImage(source: ImageSource.camera);
-              if (filesPaths == null || filesPaths.length < 3) {
-                setState(() {
-                  filesPaths.add(pickedFile.path);
-                });
+              if (mailProviderHolder.filePathes != null ||
+                  mailProviderHolder.filePathes.length < 3) {
+                mailProviderHolder.addToFilePath(pickedFile.path);
               } else {
                 showToastUpload("עד 3 קבצים");
               }
@@ -131,133 +170,188 @@ class _NewMessegeState extends State<NewMessege> {
           ),
           IconButton(
             icon: Icon(Icons.send),
-            onPressed: () {
+            onPressed: () async {
               if (_formKey.currentState.validate()) {
-                if (to.length == 0) {
+                if (mailProviderHolder.recep.length == 0) {
                   showToastUpload("יש לבחור נמענים");
                   displayBottomSheet(context);
                   return;
                 }
-                mailProviderHolder.sendMessege(
-                    subject.text,
-                    content.text,
-                    filesPaths,
-                    widget.reply,
-                    widget.replyToAll,
-                    widget.messegeId);
+                var sendStatus = await mailProviderHolder.sendMessege(
+                  subject.text,
+                  content.text,
+                  widget.reply,
+                  widget.replyToAll,
+                  widget.messegeInfo != null
+                      ? widget.messegeInfo.messageID
+                      : null,
+                );
+                if (sendStatus) {
+                  Navigator.pop(context);
+                  showToastUpload("ההודעה נשלחה בהצלחה");
+                }
               }
             },
           ),
           PopUpMenu(),
         ],
       ),
-      body: Padding(
-        padding: const EdgeInsets.all(8.0),
-        child: Container(
-          child: Form(
-            key: _formKey,
-            child: Column(
-              children: [
-                TextField(
-                  controller: subject,
-                  decoration: InputDecoration(
-                    border: InputBorder.none,
-                    focusedBorder: InputBorder.none,
-                    enabledBorder: InputBorder.none,
-                    errorBorder: InputBorder.none,
-                    disabledBorder: InputBorder.none,
-                    labelText: 'נושא',
-                  ),
-                ),
-                Divider(
-                  height: 5,
-                ),
-                DropdownButtonFormField(
+      body: Stack(children: [
+        Padding(
+          padding: const EdgeInsets.all(8.0),
+          child: Container(
+            child: Form(
+              key: _formKey,
+              child: Column(
+                children: [
+                  TextField(
+                    controller: subject,
                     decoration: InputDecoration(
-                        enabledBorder: UnderlineInputBorder(
-                            borderSide: BorderSide(color: Colors.white))),
-                    isExpanded: true,
-                    value: tag,
-                    hint: Text('יש לבחור קטגוריה'),
-                    items: mailProviderHolder.tagsList != null
-                        ? mailProviderHolder.tagsList.data.map((elem) {
-                            return DropdownMenuItem(
-                              child: Text(elem.name),
-                              value: elem.id,
-                            );
-                          }).toList()
-                        : [],
-                    onChanged: (value) {
-                      setState(() {
-                        tag = value;
-                      });
-                    },
-                    validator: (value) {
-                      print(value);
-                      if (value == null) {
-                        return 'יש לבחור קטגוריה';
-                      }
-                      return null;
-                    }),
-                Divider(),
-                !widget.reply && !widget.replyToAll
-                    ? Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                            Text("ל"),
-                            IconButton(
-                              icon: Icon(Icons.add),
-                              onPressed: () async {
-                                displayBottomSheet(context);
-                              },
-                            ),
-                          ])
-                    : Container(),
-                Divider(),
-                Expanded(
-                  child: TextField(
-                    controller: content,
-                    maxLines: 8,
-                    decoration:
-                        InputDecoration.collapsed(hintText: "כתיבת אימייל"),
+                      border: InputBorder.none,
+                      focusedBorder: InputBorder.none,
+                      enabledBorder: InputBorder.none,
+                      errorBorder: InputBorder.none,
+                      disabledBorder: InputBorder.none,
+                      labelText: 'נושא',
+                    ),
                   ),
-                ),
-                Expanded(
-                  child: filesPaths.length > 0
-                      ? ListView.builder(
-                          itemCount: filesPaths.length,
-                          itemBuilder: (context, i) {
-                            return Card(
-                              child: ListTile(
-                                onTap: () {
-                                  Navigator.push(
-                                    context,
-                                    MaterialPageRoute(
-                                        builder: (context) =>
-                                            FileViewer(filesPaths[i])),
+                  Divider(
+                    height: 5,
+                  ),
+                  DropdownButtonFormField(
+                      decoration: InputDecoration(
+                          enabledBorder: UnderlineInputBorder(
+                              borderSide: BorderSide(color: Colors.white))),
+                      isExpanded: true,
+                      value: tag,
+                      hint: Text('יש לבחור קטגוריה'),
+                      items: mailProviderHolder.tagsList != null
+                          ? mailProviderHolder.tagsList.data.map((elem) {
+                              return DropdownMenuItem(
+                                child: Text(elem.name),
+                                value: elem.id,
+                              );
+                            }).toList()
+                          : [],
+                      onChanged: (value) {
+                        mailProviderHolder.setSelectedTag(value);
+                      },
+                      validator: (value) {
+                        if (value == null) {
+                          return 'יש לבחור קטגוריה';
+                        }
+                        return null;
+                      }),
+                  Divider(),
+                  Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text("ל"),
+                        Expanded(
+                            child: Tags(
+                                horizontalScroll: true,
+                                itemCount: mailProviderHolder.recep.length,
+                                itemBuilder: (index) {
+                                  return ItemTags(
+                                    textStyle: TextStyle(
+                                      fontSize: 12,
+                                    ),
+                                    activeColor: Colors.green[400],
+                                    color: Colors.green[400],
+                                    textActiveColor: Colors.white,
+                                    textColor: Colors.white,
+                                    index: index,
+                                    removeButton:
+                                        !widget.reply && !widget.replyToAll
+                                            ? ItemTagsRemoveButton(
+                                                onRemoved: () {
+                                                  mailProviderHolder
+                                                      .setMemberSelected(
+                                                          mailProviderHolder
+                                                                  .getRecepList()[
+                                                              index][1][1],
+                                                          mailProviderHolder
+                                                                  .getRecepList()[
+                                                              index][0]);
+                                                  return true;
+                                                },
+                                              )
+                                            : null,
+                                    title:
+                                        ' ${mailProviderHolder.getRecepList()[index][1][0]}  ',
                                   );
-                                },
-                                leading: GestureDetector(
-                                  child: Icon(Icons.delete),
+                                })),
+                        IconButton(
+                          icon: Icon(Icons.add),
+                          onPressed: !widget.reply && !widget.replyToAll
+                              ? () async {
+                                  displayBottomSheet(context);
+                                }
+                              : null,
+                        ),
+                      ]),
+                  Divider(),
+                  Expanded(
+                    child: TextField(
+                      controller: content,
+                      maxLines: 8,
+                      decoration:
+                          InputDecoration.collapsed(hintText: "כתיבת אימייל"),
+                    ),
+                  ),
+                  Expanded(
+                    child: mailProviderHolder.filePathes != null &&
+                            mailProviderHolder.filePathes.length > 0
+                        ? ListView.builder(
+                            itemCount: mailProviderHolder.filePathes.length,
+                            itemBuilder: (context, i) {
+                              return Card(
+                                child: ListTile(
                                   onTap: () {
-                                    setState(() {
-                                      filesPaths.removeAt(i);
-                                    });
+                                    Navigator.push(
+                                      context,
+                                      MaterialPageRoute(
+                                          builder: (context) => FileViewer(
+                                              mailProviderHolder
+                                                  .filePathes[i])),
+                                    );
                                   },
+                                  leading: GestureDetector(
+                                    child: Icon(Icons.delete),
+                                    onTap: () {
+                                      mailProviderHolder.removeFromFilePath(i);
+                                    },
+                                  ),
+                                  title: Text(mailProviderHolder.filePathes[i]
+                                      .split("/")
+                                      .last),
                                 ),
-                                title: Text(filesPaths[i].split("/").last),
-                              ),
-                            );
+                              );
 
-                            //path.extension(currentLesson.hFiles[i])
-                          })
-                      : Container(),
-                )
-              ],
+                              //path.extension(currentLesson.hFiles[i])
+                            })
+                        : Container(),
+                  )
+                ],
+              ),
             ),
           ),
         ),
-      ),
+        mailProviderHolder.showPreloader
+            ? Align(
+                alignment: Alignment.bottomLeft,
+                child: Padding(
+                  padding: const EdgeInsets.all(8.0),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.center,
+                    mainAxisSize: MainAxisSize.max,
+                    mainAxisAlignment: MainAxisAlignment.end,
+                    children: <Widget>[CircularProgressIndicator()],
+                  ),
+                ),
+              )
+            : Container()
+      ]),
     );
   }
 }

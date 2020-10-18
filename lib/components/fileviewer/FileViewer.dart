@@ -31,8 +31,25 @@ class FileBuilder extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    print(fileName);
     switch (path.extension(fileName)) {
       case ".jpg":
+        {
+          if (FileSystemEntity.typeSync(fileName) !=
+              FileSystemEntityType.notFound) {
+            return Center(child: Image.asset(fileName));
+          } else {
+            return Stack(children: <Widget>[
+              Center(child: CircularProgressIndicator()),
+              Center(
+                child: FadeInImage.memoryNetwork(
+                    placeholder: kTransparentImage, image: fileName),
+              ),
+            ]);
+          }
+        }
+        break;
+      case ".png":
         {
           if (FileSystemEntity.typeSync(fileName) !=
               FileSystemEntityType.notFound) {

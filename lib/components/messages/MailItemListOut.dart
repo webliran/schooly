@@ -13,7 +13,9 @@ class MailItemListOut extends StatelessWidget {
     var mailProviderHolder = context.watch<MailProvider>();
     var now = new DateTime.now();
     final _dateFormatter = new DateFormat('hh:mm dd/MM/yy');
-
+    var currentTag = mailProviderHolder.tagsList.data.where((element) {
+      return info.tags == element.id.toString();
+    }).toList();
     String currentDate;
     if (DateFormat('dd/MM/yy').format(info.date) ==
         DateFormat('dd/MM/yy').format(now)) {
@@ -23,6 +25,11 @@ class MailItemListOut extends StatelessWidget {
       currentDate = DateFormat('dd/MM').format(info.date);
     } else {
       currentDate = DateFormat('dd/MM/yy').format(info.date);
+    }
+    Color hexToColor(String code) {
+      if (code != null)
+        return new Color(
+            int.parse(code.substring(1, 7), radix: 16) + 0xFF000000);
     }
 
     return Card(
@@ -42,11 +49,54 @@ class MailItemListOut extends StatelessWidget {
           children: [
             Text(
                 '${mailProviderHolder.currentFirstName} ${mailProviderHolder.currentLastName}'),
-            Text(currentDate),
+            Text(currentDate, style: TextStyle(fontSize: 14)),
           ],
         ),
-        subtitle: Text(info.subject),
-        trailing: Icon(Icons.more_vert),
+        subtitle: Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Text(info.subject),
+            Row(
+              children: [
+                currentTag.length > 0
+                    ? Container(
+                        decoration: BoxDecoration(
+                          border: Border.all(color: Colors.grey[200]),
+                          color: hexToColor(currentTag[0].backgroundColor),
+                        ),
+                        padding:
+                            EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                        child: Text(
+                          '${currentTag[0].name}',
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: hexToColor(currentTag[0].color),
+                          ),
+                        ),
+                      )
+                    : Container(),
+                info.filesWereAttached
+                    ? Container(
+                        padding:
+                            EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                        decoration: BoxDecoration(
+                            border: Border.all(color: Colors.grey[200]),
+                            color: Colors.blueAccent[200]),
+                        child: Icon(Icons.attach_file,
+                            size: 16, color: Colors.white),
+                      )
+                    : Container(),
+              ],
+            ),
+          ],
+        ),
+        trailing: IconButton(
+          icon: Icon(Icons.delete),
+          color: Colors.red,
+          onPressed: () {
+            mailProviderHolder.setMessageAsDeleted(info.messageID);
+          },
+        ),
       ),
     );
   }

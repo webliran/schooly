@@ -28,29 +28,39 @@ class Message {
   int fromID;
   @JsonKey(fromJson: _fromJson)
   DateTime date;
+  @JsonKey(fromJson: _fromJsonStringToList)
+  List groups;
+  @JsonKey(fromJson: _fromJsonStringToListFirst)
+  String tags;
   String attachedFile;
   String lastName;
   String attachedFile3;
   String attachedFile2;
   int wasRead;
   int rownum;
+  bool canReplyAll;
+  @JsonKey(defaultValue: true)
+  bool canReply;
 
-  Message(
-      {this.firstName,
-      this.isTeacher,
-      this.filesWereAttached,
-      this.messageID,
-      this.subject,
-      this.picture,
-      this.content,
-      this.fromID,
-      this.date,
-      this.attachedFile,
-      this.attachedFile2,
-      this.attachedFile3,
-      this.lastName,
-      this.wasRead,
-      this.rownum});
+  Message({
+    this.firstName,
+    this.isTeacher,
+    this.filesWereAttached,
+    this.messageID,
+    this.subject,
+    this.picture,
+    this.content,
+    this.fromID,
+    this.date,
+    this.attachedFile,
+    this.attachedFile2,
+    this.attachedFile3,
+    this.lastName,
+    this.wasRead,
+    this.rownum,
+    this.canReply,
+    this.canReplyAll,
+  });
 
   factory Message.fromJson(Map<String, dynamic> data) =>
       _$MessageFromJson(data);
@@ -74,22 +84,25 @@ class MessageOut {
   String messageID;
   String subject;
   String content;
+  bool filesWereAttached;
   @JsonKey(fromJson: _fromJson)
   DateTime date;
+  @JsonKey(fromJson: _fromJsonStringToListFirst)
+  String tags;
   String attachedFile;
   String attachedFile3;
   String attachedFile2;
   List<Recipiention> recipients;
 
-  MessageOut({
-    this.messageID,
-    this.subject,
-    this.content,
-    this.date,
-    this.attachedFile,
-    this.attachedFile2,
-    this.attachedFile3,
-  });
+  MessageOut(
+      {this.messageID,
+      this.subject,
+      this.content,
+      this.date,
+      this.attachedFile,
+      this.attachedFile2,
+      this.attachedFile3,
+      this.filesWereAttached});
 
   factory MessageOut.fromJson(Map<String, dynamic> data) =>
       _$MessageOutFromJson(data);
@@ -122,8 +135,11 @@ class MailTags {
 @JsonSerializable()
 class MailTag {
   String name;
+  String color;
+  String backgroundColor;
+
   int id;
-  MailTag({this.name, this.id});
+  MailTag({this.name, this.id, this.color, this.backgroundColor});
 
   factory MailTag.fromJson(Map<String, dynamic> data) =>
       _$MailTagFromJson(data);
@@ -169,7 +185,7 @@ class Member {
   var identitynumber;
   String firstName;
   String lastName;
-  @JsonKey(defaultValue: true)
+  @JsonKey(defaultValue: false)
   bool selected;
 
   Member({this.firstName, this.identitynumber, this.lastName, this.student_id});
@@ -184,4 +200,16 @@ DateTime _fromJson(String date) {
 
 String _fromJsonId(id) {
   return id.toString();
+}
+
+List _fromJsonStringToList(string) {
+  if (string == "") return [];
+
+  return string.split(",");
+}
+
+_fromJsonStringToListFirst(string) {
+  if (string == "") return "";
+  List tags = string.split(",");
+  return tags[0];
 }

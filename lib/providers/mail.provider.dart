@@ -1,3 +1,4 @@
+import 'package:collection/collection.dart';
 import 'package:flutter/foundation.dart';
 import 'package:schooly/models/mail/mailinfo.dart';
 import 'package:schooly/providers/login.provider.dart';
@@ -24,6 +25,14 @@ class MailProvider extends SchoolyApi with ChangeNotifier {
   String currentLastName;
   int start = 0;
   int limit = 10;
+  Map recep = {};
+  List recepList;
+  List filePathes = [];
+  String selectedTag;
+
+  getRecepList() {
+    return recep.entries.map((entry) => [entry.key, entry.value]).toList();
+  }
 
   MailProvider() {
     setMainInfo();
@@ -42,7 +51,6 @@ class MailProvider extends SchoolyApi with ChangeNotifier {
     String msgFinal = Translate().translations[msg] != ""
         ? Translate().translations[msg]
         : msg;
-    print(msgFinal);
     Fluttertoast.showToast(
       msg: msgFinal,
       toastLength: Toast.LENGTH_LONG,
@@ -67,21 +75,122 @@ class MailProvider extends SchoolyApi with ChangeNotifier {
         groupsList.data.where((element) => element.key == id).toList();
     currentGroup[0].shown = !currentGroup[0].shown;
     notifyListeners();
+    if (GroupMembersList[id] == null) {
+      await getGroupMembers(id);
+    }
+
+    notifyListeners();
+  }
+
+  clearRecap() {
+    recep = {};
+    for (var i = 0; i < groupsList.data.length; i++) {
+      groupsList.data[i].selected = false;
+    }
+    if (GroupMembersList != null) {
+      GroupMembersList.forEach((key, value) {
+        if (value != null) {
+          for (var i = 0; i < value.data.length; i++) {
+            value.data[i].selected = false;
+          }
+        }
+      });
+    }
+    notifyListeners();
+  }
+
+  clearFiles() {
+    filePathes = [];
+    notifyListeners();
+  }
+
+  setRecap(identitynumber, firstName, lastName) {
+    clearRecap();
+    recep[identitynumber] = [firstName + " " + lastName, null];
+
+    notifyListeners();
+  }
+
+  setMemberSelected(groupId, identity) {
+    bool status;
+    var currentMember = GroupMembersList[groupId]
+        .data
+        .where((element) => element.identitynumber == identity)
+        .toList();
+    status = !currentMember[0].selected;
+    currentMember[0].selected = status;
+    if (status) {
+      recep[currentMember[0].identitynumber] = [
+        currentMember[0].firstName + " " + currentMember[0].lastName,
+        groupId
+      ];
+    } else {
+      recep.remove(currentMember[0].identitynumber);
+    }
+    notifyListeners();
   }
 
   setGroupSelected(id) async {
+    if (GroupMembersList[id] == null) {
+      await getGroupMembers(id);
+    }
+
+    bool status;
     var currentGroup =
         groupsList.data.where((element) => element.key == id).toList();
-    currentGroup[0].selected = !currentGroup[0].selected;
-    notifyListeners();
 
+    if (currentGroup.length > 0) {
+      status = !currentGroup[0].selected;
+      currentGroup[0].selected = status;
+      GroupMembersList[id].data.forEach((elem) {
+        if (status) {
+          recep[elem.identitynumber] = [
+            elem.firstName + " " + elem.lastName,
+            id
+          ];
+        } else {
+          recep.remove(elem.identitynumber);
+        }
+        elem.selected = status;
+      });
+      notifyListeners();
+    }
+  }
+
+  getGroupAndUpdateRecep(id) async {
+    setShowPreloader();
+    GroupMembers currentGroup;
+    var memberListRes =
+        await http.get('$url/?query=GetGroupMembers&uuid=$uuid&key=$id');
+    if (memberListRes.statusCode == 200) {
+      var memberListResponse = convert.jsonDecode(memberListRes.body);
+      if (memberListResponse['success']) {
+        setHidePreloader();
+        currentGroup = new GroupMembers.fromJson(memberListResponse);
+        currentGroup.data.forEach((elem) {
+          recep[elem.identitynumber] = [
+            elem.firstName + " " + elem.lastName,
+            null
+          ];
+        });
+        notifyListeners();
+      } else {
+        msg = 'NetworkError';
+        showWebColoredToast();
+      }
+    } else {
+      msg = 'NetworkError';
+      showWebColoredToast();
+    }
+  }
+
+  getGroupMembers(id) async {
     var memberListRes =
         await http.get('$url/?query=GetGroupMembers&uuid=$uuid&key=$id');
     if (memberListRes.statusCode == 200) {
       var memberListResponse = convert.jsonDecode(memberListRes.body);
       if (memberListResponse['success']) {
         GroupMembersList[id] = new GroupMembers.fromJson(memberListResponse);
-        print(GroupMembersList[id]);
         notifyListeners();
       } else {
         msg = 'NetworkError';
@@ -100,7 +209,7 @@ class MailProvider extends SchoolyApi with ChangeNotifier {
       if (groupsListResponse['success']) {
         groupsList = new GroupList.fromJson(groupsListResponse);
         groupsList.data.forEach((element) {
-          GroupMembersList[element.key] = {};
+          GroupMembersList[element.key] = null;
         });
 
         notifyListeners();
@@ -132,8 +241,6 @@ class MailProvider extends SchoolyApi with ChangeNotifier {
   }
 
   getOutBox(type) async {
-    setShowPreloader();
-
     int currentLimit = 10;
     if (type == "append_new") {
       start = 0;
@@ -142,6 +249,7 @@ class MailProvider extends SchoolyApi with ChangeNotifier {
       start += 11;
       limit += 10;
     }
+    print('$url/?query=GetOutBox&uuid=$uuid&start=$start&limit=$currentLimit');
 
     var outboxResponse = await http.get(
         '$url/?query=GetOutBox&uuid=$uuid&start=$start&limit=$currentLimit');
@@ -170,11 +278,9 @@ class MailProvider extends SchoolyApi with ChangeNotifier {
       msg = 'NetworkError';
       showWebColoredToast();
     }
-    setHidePreloader();
   }
 
   getInbox(type) async {
-    setShowPreloader();
     int currentLimit = 10;
     if (type == "append_new") {
       start = 0;
@@ -183,6 +289,7 @@ class MailProvider extends SchoolyApi with ChangeNotifier {
       start += 11;
       limit += 10;
     }
+    print('$url/?query=GetInBox&uuid=$uuid&start=$start&limit=$currentLimit');
     var inboxResponse = await http.get(
         '$url/?query=GetInBox&uuid=$uuid&start=$start&limit=$currentLimit');
     if (inboxResponse.statusCode == 200) {
@@ -209,7 +316,6 @@ class MailProvider extends SchoolyApi with ChangeNotifier {
       msg = 'NetworkError';
       showWebColoredToast();
     }
-    setHidePreloader();
   }
 
   setMessegeRead(messageID) async {
@@ -235,6 +341,7 @@ class MailProvider extends SchoolyApi with ChangeNotifier {
   }
 
   setMessageAsDeleted(messageID) async {
+    setShowPreloader();
     var messegeReadResponse = await http.get(
         '$url/?query=MarkMessageAsDeleted&uuid=$uuid&messageID=$messageID');
     if (messegeReadResponse.statusCode == 200) {
@@ -245,51 +352,97 @@ class MailProvider extends SchoolyApi with ChangeNotifier {
             .removeWhere((element) => element.messageID == messageID);
         messageListOut.data
             .removeWhere((element) => element.messageID == messageID);
+        setHidePreloader();
         notifyListeners();
       } else {
+        setHidePreloader();
         msg = 'NetworkError';
         showWebColoredToast();
       }
     } else {
+      setHidePreloader();
       msg = 'NetworkError';
       showWebColoredToast();
     }
   }
 
-  sendMessege(subject, content, files, reply, replyToAll, messegeId) async {
+  mapToRecepString(mapTo) {
+    String recepString = "";
+    mapTo.forEach((key, elem) {
+      print(key.toString());
+      recepString += key.toString() + ",";
+      print(recepString);
+    });
+
+    return recepString.substring(0, recepString.length - 1);
+  }
+
+  addToFilePath(path) {
+    filePathes.add(path);
+    notifyListeners();
+  }
+
+  removeFromFilePath(id) {
+    filePathes.removeAt(id);
+    notifyListeners();
+  }
+
+  setSelectedTag(value) {
+    selectedTag = value.toString();
+    notifyListeners();
+  }
+
+  sendMessege(subject, content, reply, replyToAll, messegeId) async {
+    setShowPreloader();
     String attachedFileNames = "";
     String uploadUrl;
-    for (var i = 0; i < files.length; i++) {
-      attachedFileNames += files[i].split("/").last;
+    for (var i = 0; i < filePathes.length; i++) {
+      String isComma = i < filePathes.length ? "," : "";
+      attachedFileNames += filePathes[i].split("/").last + isComma;
     }
 
     if (reply || replyToAll) {
       bool replyType = replyToAll ? true : false;
       uploadUrl =
           '$url/?query=PostReply&uuid=$uuid&subject=$subject&content=$content&attachedFileNames=$attachedFileNames&messageID=$messegeId&replyAll=$replyType';
-      print(uploadUrl);
     } else {
       uploadUrl =
-          '$url/?query=PostMessage&uuid=$uuid&subject=$subject&content=$content&attachedFileNames=$attachedFileNames&recipients=039407168';
+          '$url/?query=PostMessage&uuid=$uuid&subject=$subject&content=$content&attachedFileNames=$attachedFileNames&recipients=${mapToRecepString(recep)}&tags=${selectedTag.toString()}';
     }
-    print(uploadUrl);
+
     var request = http.MultipartRequest('POST', Uri.parse(uploadUrl));
 
-    for (var i = 0; i < files.length; i++) {
-      if (FileSystemEntity.typeSync(files[i]) !=
-          FileSystemEntityType.notFound) {
-        request.files.add(http.MultipartFile(
-            '[${i}]',
-            File(files[i]).readAsBytes().asStream(),
-            File(files[i]).lengthSync(),
-            filename: files[i].split("/").last));
-      }
+    for (var i = 0; i < filePathes.length; i++) {
+      request.files.add(http.MultipartFile(
+          '[${i}]',
+          File(filePathes[i]).readAsBytes().asStream(),
+          File(filePathes[i]).lengthSync(),
+          filename: filePathes[i].split("/").last));
     }
 
+    print(request.files.length);
     var responseFileUpload = await request.send();
     final responseFileUploadJsonFull =
         await responseFileUpload.stream.bytesToString();
-
-    print(responseFileUploadJsonFull);
+    if (responseFileUpload.statusCode == 200) {
+      var responseFileUploadJson =
+          convert.jsonDecode(responseFileUploadJsonFull);
+      setHidePreloader();
+      if (responseFileUploadJson['success']) {
+        print(responseFileUploadJson);
+        notifyListeners();
+        return true;
+      } else {
+        setHidePreloader();
+        msg = 'NetworkError';
+        showWebColoredToast();
+        return false;
+      }
+    } else {
+      setHidePreloader();
+      msg = 'NetworkError';
+      showWebColoredToast();
+      return false;
+    }
   }
 }

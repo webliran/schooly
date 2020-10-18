@@ -33,12 +33,14 @@ class _MessagesState extends State<Messages> {
           bottomNavigationBar: menu(),
           body: TabBarView(
             children: [
-              Container(child: IncomeBox()),
-              Container(child: OutBox()),
+              Container(child: IncomeBox(mailProviderHolder)),
+              Container(child: OutBox(mailProviderHolder)),
             ],
           ),
           floatingActionButton: FloatingActionButton(
             onPressed: () {
+              mailProviderHolder.clearRecap();
+              mailProviderHolder.clearFiles();
               Navigator.push(
                 context,
                 MaterialPageRoute(
@@ -46,7 +48,8 @@ class _MessagesState extends State<Messages> {
                     return NewMessege(
                       reply: false,
                       replyToAll: false,
-                      messegeId: null,
+                      messegeInfo: null,
+                      prevMailProviderHolder: mailProviderHolder,
                     );
                   },
                 ),
