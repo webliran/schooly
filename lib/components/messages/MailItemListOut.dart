@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:schooly/components/global/AlertPop.dart';
 import 'package:schooly/components/messages/MessegePopOut.dart';
 import 'package:schooly/components/messages/messegePop.dart';
 import 'package:schooly/providers/mail.provider.dart';
@@ -94,7 +95,8 @@ class MailItemListOut extends StatelessWidget {
           icon: Icon(Icons.delete),
           color: Colors.red,
           onPressed: () {
-            mailProviderHolder.setMessageAsDeleted(info.messageID);
+            showAlertDialog(context, "מחיקת הודעה", "האם אתה בטוח?",
+                () => mailProviderHolder.deleteMessage(info.messageID), false);
           },
         ),
       ),

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_tags/flutter_tags.dart';
 import 'package:schooly/components/fileviewer/FileViewer.dart';
+import 'package:schooly/components/global/AlertPop.dart';
 import 'package:schooly/components/global/PopupMenuMain.dart';
 import 'package:intl/intl.dart';
 import 'package:flutter_html/flutter_html.dart';
@@ -47,9 +48,13 @@ class messegePopOut extends StatelessWidget {
                           icon: Icon(Icons.delete),
                           color: Colors.blueAccent,
                           onPressed: () {
-                            Navigator.pop(context);
-                            mailProviderHolder
-                                .setMessageAsDeleted(info.messageID);
+                            showAlertDialog(
+                                context,
+                                "מחיקת הודעה",
+                                "האם אתה בטוח?",
+                                () => mailProviderHolder
+                                    .deleteMessage(info.messageID),
+                                true);
                           },
                         ),
                       ],

@@ -84,8 +84,6 @@ class LoginProvider extends SchoolyApi with ChangeNotifier {
       studentId = await SharedState().read("studentId");
       String jsonSelectedUser = await SharedState().read("selectedUser");
       selectedUser = jsonDecode(jsonSelectedUser);
-      await SharedState().save("firstName", selectedUser['firstName']);
-      await SharedState().save("lastName", selectedUser['lastName']);
 
       step = "logedin";
       notifyListeners();
@@ -102,6 +100,7 @@ class LoginProvider extends SchoolyApi with ChangeNotifier {
               .where((item) => item['is_selected'].toString() == 'true')
               .toList()[0];
           await SharedState().save("selectedUser", jsonEncode(selectedUser));
+
           step = "logedin";
         } else {
           msg = jsonResponse['Msg'];

@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:collection/collection.dart';
 import 'package:flutter/foundation.dart';
 import 'package:schooly/models/mail/mailinfo.dart';
@@ -24,7 +26,8 @@ class MailProvider extends SchoolyApi with ChangeNotifier {
   String currentFirstName;
   String currentLastName;
   int start = 0;
-  int limit = 10;
+  int limitIn = 10;
+  int limitOut = 10;
   Map recep = {};
   List recepList;
   List filePathes = [];
@@ -62,8 +65,10 @@ class MailProvider extends SchoolyApi with ChangeNotifier {
   void setMainInfo() async {
     uuid = await SharedState().read('uuid');
     studentId = await SharedState().read('studentId');
-    currentFirstName = await SharedState().read("firstName");
-    currentLastName = await SharedState().read("lastName");
+    String jsonSelectedUser = await SharedState().read("selectedUser");
+    var selectedUser = jsonDecode(jsonSelectedUser);
+    currentFirstName = selectedUser["firstName"];
+    currentLastName = selectedUser["lastName"];
     await getGroups();
     await getMailTags();
     await getInbox("append_new");
@@ -132,7 +137,11 @@ class MailProvider extends SchoolyApi with ChangeNotifier {
 
   setGroupSelected(id) async {
     if (GroupMembersList[id] == null) {
+      setShowPreloader();
+      notifyListeners();
       await getGroupMembers(id);
+      setHidePreloader();
+      notifyListeners();
     }
 
     bool status;
@@ -244,10 +253,11 @@ class MailProvider extends SchoolyApi with ChangeNotifier {
     int currentLimit = 10;
     if (type == "append_new") {
       start = 0;
-      currentLimit = limit;
+      limitOut = limitOut != 0 ? limitOut : 10;
+      currentLimit = limitOut;
     } else if (type == "append_old") {
       start += 11;
-      limit += 10;
+      limitOut += 10;
     }
     print('$url/?query=GetOutBox&uuid=$uuid&start=$start&limit=$currentLimit');
 
@@ -260,12 +270,12 @@ class MailProvider extends SchoolyApi with ChangeNotifier {
             new MessageListOut.fromJson(outboxJsonResponse);
         if (type == "append_new") {
           messageListOut = messageListOutFromApi;
-          if (limit > messageListOut.totalCount) {
-            limit = messageListOut.totalCount;
+          if (limitOut > messageListOut.totalCount) {
+            limitOut = messageListOut.totalCount;
           }
         } else if (type == "append_old") {
           if (messageListOutFromApi.data.length > 0 &&
-              limit - 10 < messageListOutFromApi.totalCount)
+              limitOut - 10 < messageListOutFromApi.totalCount)
             messageListOut.data += messageListOutFromApi.data;
         }
 
@@ -284,10 +294,11 @@ class MailProvider extends SchoolyApi with ChangeNotifier {
     int currentLimit = 10;
     if (type == "append_new") {
       start = 0;
-      currentLimit = limit;
+      limitIn = limitIn != 0 ? limitIn : 10;
+      currentLimit = limitIn;
     } else if (type == "append_old") {
       start += 11;
-      limit += 10;
+      limitIn += 10;
     }
     print('$url/?query=GetInBox&uuid=$uuid&start=$start&limit=$currentLimit');
     var inboxResponse = await http.get(
@@ -298,12 +309,12 @@ class MailProvider extends SchoolyApi with ChangeNotifier {
         var messageListFromApi = new MessageList.fromJson(inboxJsonResponse);
         if (type == "append_new") {
           messageList = messageListFromApi;
-          if (limit > messageList.totalCount) {
-            limit = messageList.totalCount;
+          if (limitIn > messageList.totalCount) {
+            limitIn = messageList.totalCount;
           }
         } else if (type == "append_old") {
           if (messageListFromApi.data.length > 0 &&
-              limit - 10 < messageListFromApi.totalCount)
+              limitIn - 10 < messageListFromApi.totalCount)
             messageList.data += messageListFromApi.data;
         }
 
@@ -340,10 +351,12 @@ class MailProvider extends SchoolyApi with ChangeNotifier {
     }
   }
 
-  setMessageAsDeleted(messageID) async {
+  deleteMessage(messageID) async {
     setShowPreloader();
-    var messegeReadResponse = await http.get(
-        '$url/?query=MarkMessageAsDeleted&uuid=$uuid&messageID=$messageID');
+    print('$url/?query=DeleteMessage&uuid=$uuid&messageID=$messageID');
+    var messegeReadResponse = await http
+        .get('$url/?query=DeleteMessage&uuid=$uuid&messageID=$messageID');
+
     if (messegeReadResponse.statusCode == 200) {
       var messegeReadJsonResponse =
           convert.jsonDecode(messegeReadResponse.body);
@@ -352,6 +365,33 @@ class MailProvider extends SchoolyApi with ChangeNotifier {
             .removeWhere((element) => element.messageID == messageID);
         messageListOut.data
             .removeWhere((element) => element.messageID == messageID);
+        setHidePreloader();
+        notifyListeners();
+      } else {
+        setHidePreloader();
+        msg = 'NetworkError';
+        showWebColoredToast();
+      }
+    } else {
+      setHidePreloader();
+      msg = 'NetworkError';
+      showWebColoredToast();
+    }
+  }
+
+  setMessageAsDeleted(messageID) async {
+    setShowPreloader();
+    print('$url/?query=MarkMessageAsDeleted&uuid=$uuid&messageID=$messageID');
+    var messegeReadResponse = await http.get(
+        '$url/?query=MarkMessageAsDeleted&uuid=$uuid&messageID=$messageID');
+
+    if (messegeReadResponse.statusCode == 200) {
+      var messegeReadJsonResponse =
+          convert.jsonDecode(messegeReadResponse.body);
+      if (messegeReadJsonResponse['success']) {
+        messageList.data
+            .removeWhere((element) => element.messageID == messageID);
+
         setHidePreloader();
         notifyListeners();
       } else {
@@ -413,11 +453,8 @@ class MailProvider extends SchoolyApi with ChangeNotifier {
     var request = http.MultipartRequest('POST', Uri.parse(uploadUrl));
 
     for (var i = 0; i < filePathes.length; i++) {
-      request.files.add(http.MultipartFile(
-          '[${i}]',
-          File(filePathes[i]).readAsBytes().asStream(),
-          File(filePathes[i]).lengthSync(),
-          filename: filePathes[i].split("/").last));
+      request.files
+          .add(await http.MultipartFile.fromPath('[${i}]', filePathes[i]));
     }
 
     print(request.files.length);

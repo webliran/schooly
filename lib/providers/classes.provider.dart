@@ -214,11 +214,8 @@ class ClassProvider extends SchoolyApi with ChangeNotifier {
     for (var i = 0; i < currentLesson.hFiles.length; i++) {
       if (FileSystemEntity.typeSync(currentLesson.hFiles[i]) !=
           FileSystemEntityType.notFound) {
-        request.files.add(http.MultipartFile(
-            '[${i}]',
-            File(currentLesson.hFiles[i]).readAsBytes().asStream(),
-            File(currentLesson.hFiles[i]).lengthSync(),
-            filename: currentLesson.hFiles[i].split("/").last));
+        request.files.add(await http.MultipartFile.fromPath(
+            '[${i}]', currentLesson.hFiles[i]));
       }
     }
 

@@ -37,12 +37,21 @@ class NewMessege extends StatefulWidget {
 }
 
 class _NewMessegeState extends State<NewMessege> {
-  final picker = ImagePicker();
+  @override
+  void initState() {
+    if (widget.prevMailProviderHolder != null &&
+        widget.prevMailProviderHolder.recep.length > 0) {
+      widget.prevMailProviderHolder.clearRecap();
+    }
 
-  int tag;
-  var subject = TextEditingController();
-  var content = TextEditingController();
+    super.initState();
+  }
+
+  final picker = ImagePicker();
   final _formKey = GlobalKey<FormState>();
+  int tag;
+  final subject = TextEditingController();
+  final content = TextEditingController();
 
   Future getImage() async {
     final pickedFile = await picker.getImage(source: ImageSource.camera);
@@ -55,82 +64,110 @@ class _NewMessegeState extends State<NewMessege> {
           var mailProviderHolder = ctx.watch<MailProvider>();
 
           return mailProviderHolder.groupsList != null
-              ? ListView(
-                  children: mailProviderHolder.groupsList.data.map((item) {
-                    return Column(
-                      children: [
-                        new CheckboxListTile(
-                          secondary: GestureDetector(
-                              child: Icon(item.shown
-                                  ? Icons.keyboard_arrow_up
-                                  : Icons.keyboard_arrow_down),
-                              onTap: () async {
-                                await mailProviderHolder
-                                    .setGroupShownHidden(item.key);
-                              }),
-                          controlAffinity: ListTileControlAffinity.leading,
-                          title: new Text(item.name),
-                          value: item.selected,
-                          onChanged: (bool value) async {
-                            await mailProviderHolder.setGroupSelected(item.key);
-                          },
-                        ),
-                        item.shown
-                            ? Padding(
-                                padding: const EdgeInsets.only(right: 20),
-                                child: Container(
-                                    height: 200,
-                                    child: mailProviderHolder.GroupMembersList[
-                                                    item.key] !=
-                                                null &&
-                                            mailProviderHolder
+              ? Stack(children: [
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 40),
+                    child: ListView(
+                      children: mailProviderHolder.groupsList.data.map((item) {
+                        return Column(
+                          children: [
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                Row(
+                                  children: [
+                                    new Checkbox(
+                                      value: item.selected,
+                                      onChanged: (bool value) async {
+                                        await mailProviderHolder
+                                            .setGroupSelected(item.key);
+                                      },
+                                    ),
+                                    Text(item.name),
+                                  ],
+                                ),
+                                GestureDetector(
+                                    child: Icon(item.shown
+                                        ? Icons.keyboard_arrow_up
+                                        : Icons.keyboard_arrow_down),
+                                    onTap: () async {
+                                      await mailProviderHolder
+                                          .setGroupShownHidden(item.key);
+                                    })
+                              ],
+                            ),
+                            item.shown
+                                ? Padding(
+                                    padding: const EdgeInsets.only(right: 20),
+                                    child: Container(
+                                        height: 200,
+                                        child: mailProviderHolder
+                                                            .GroupMembersList[
+                                                        item.key] !=
+                                                    null &&
+                                                mailProviderHolder
+                                                        .GroupMembersList[
+                                                            item.key]
+                                                        .data
+                                                        .length >
+                                                    0
+                                            ? ListView(
+                                                children: mailProviderHolder
                                                     .GroupMembersList[item.key]
                                                     .data
-                                                    .length >
-                                                0
-                                        ? ListView(
-                                            children: mailProviderHolder
-                                                .GroupMembersList[item.key].data
-                                                .map<Widget>(
-                                                  (elem) => Row(
-                                                    mainAxisAlignment:
-                                                        MainAxisAlignment.start,
-                                                    children: [
-                                                      Checkbox(
-                                                        value: elem.selected,
-                                                        onChanged:
-                                                            (bool value) {
-                                                          mailProviderHolder
-                                                              .setMemberSelected(
-                                                                  item.key,
-                                                                  elem.identitynumber);
-                                                        },
+                                                    .map<Widget>(
+                                                      (elem) => Row(
+                                                        mainAxisAlignment:
+                                                            MainAxisAlignment
+                                                                .start,
+                                                        children: [
+                                                          Checkbox(
+                                                            value:
+                                                                elem.selected,
+                                                            onChanged:
+                                                                (bool value) {
+                                                              mailProviderHolder
+                                                                  .setMemberSelected(
+                                                                      item.key,
+                                                                      elem.identitynumber);
+                                                            },
+                                                          ),
+                                                          Text(
+                                                              '${elem.firstName} ${elem.lastName}',
+                                                              style: TextStyle(
+                                                                  fontSize:
+                                                                      14)),
+                                                        ],
                                                       ),
-                                                      Text(
-                                                          '${elem.firstName} ${elem.lastName}',
-                                                          style: TextStyle(
-                                                              fontSize: 14)),
-                                                    ],
-                                                  ),
-                                                )
-                                                .toList())
-                                        : Center(
-                                            child:
-                                                CircularProgressIndicator())),
-                              )
-                            : Container()
-                      ],
-                    );
-                  }).toList(),
-                )
+                                                    )
+                                                    .toList())
+                                            : Center(
+                                                child:
+                                                    CircularProgressIndicator())),
+                                  )
+                                : Container(),
+                          ],
+                        );
+                      }).toList(),
+                    ),
+                  ),
+                  mailProviderHolder.showPreloader
+                      ? Align(
+                          alignment: Alignment.bottomLeft,
+                          child: Padding(
+                            padding: const EdgeInsets.all(8.0),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.center,
+                              mainAxisSize: MainAxisSize.max,
+                              mainAxisAlignment: MainAxisAlignment.end,
+                              children: <Widget>[CircularProgressIndicator()],
+                            ),
+                          ),
+                        )
+                      : Container()
+                ])
               : CircularProgressIndicator();
         });
-  }
-
-  @override
-  void setState(fn) {
-    widget.prevMailProviderHolder.clearRecap();
-    super.setState(fn);
   }
 
   @override
@@ -138,6 +175,7 @@ class _NewMessegeState extends State<NewMessege> {
     var mailProviderHolder = context.watch<MailProvider>();
 
     return Scaffold(
+      resizeToAvoidBottomPadding: false,
       appBar: AppBar(
         title: Text(
           'הודעה חדשה',
@@ -294,7 +332,7 @@ class _NewMessegeState extends State<NewMessege> {
                   Expanded(
                     child: TextField(
                       controller: content,
-                      maxLines: 8,
+                      maxLines: 60,
                       decoration:
                           InputDecoration.collapsed(hintText: "כתיבת אימייל"),
                     ),
