@@ -18,7 +18,6 @@ class _MainWraperState extends State<MainWraper> {
   @override
   Widget build(BuildContext context) {
     var loginState = context.watch<LoginProvider>();
-    var userState = context.watch<UserProvider>();
 
     switch (loginState.step) {
       case "offline":

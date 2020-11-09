@@ -365,6 +365,7 @@ class MailProvider extends SchoolyApi with ChangeNotifier {
             .removeWhere((element) => element.messageID == messageID);
         messageListOut.data
             .removeWhere((element) => element.messageID == messageID);
+        await getOutBox('append_new');
         setHidePreloader();
         notifyListeners();
       } else {
@@ -391,8 +392,9 @@ class MailProvider extends SchoolyApi with ChangeNotifier {
       if (messegeReadJsonResponse['success']) {
         messageList.data
             .removeWhere((element) => element.messageID == messageID);
-
+        await getInbox('append_new');
         setHidePreloader();
+
         notifyListeners();
       } else {
         setHidePreloader();

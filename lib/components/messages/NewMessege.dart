@@ -184,13 +184,17 @@ class _NewMessegeState extends State<NewMessege> {
           IconButton(
             icon: Icon(Icons.attachment),
             onPressed: () async {
-              var filesPathsRes = await FilePicker.getFilePath();
-              if (mailProviderHolder.filePathes != null ||
-                  mailProviderHolder.filePathes.length < 3) {
-                mailProviderHolder.addToFilePath(filesPathsRes);
-              } else {
+              FilePickerResult filesPathsRes =
+                  await FilePicker.platform.pickFiles();
+              if (mailProviderHolder.filePathes != null &&
+                  mailProviderHolder.filePathes.length < 3 &&
+                  filesPathsRes != null) {
+                mailProviderHolder
+                    .addToFilePath(filesPathsRes.files.single.path);
+              } else if (mailProviderHolder.filePathes.length == 3) {
                 showToastUpload("עד 3 קבצים");
               }
+              print(mailProviderHolder.filePathes);
             },
           ),
           IconButton(
@@ -198,10 +202,11 @@ class _NewMessegeState extends State<NewMessege> {
             onPressed: () async {
               final pickedFile =
                   await picker.getImage(source: ImageSource.camera);
-              if (mailProviderHolder.filePathes != null ||
-                  mailProviderHolder.filePathes.length < 3) {
+              if (mailProviderHolder.filePathes != null &&
+                  mailProviderHolder.filePathes.length < 3 &&
+                  pickedFile != null) {
                 mailProviderHolder.addToFilePath(pickedFile.path);
-              } else {
+              } else if (mailProviderHolder.filePathes.length == 3) {
                 showToastUpload("עד 3 קבצים");
               }
             },

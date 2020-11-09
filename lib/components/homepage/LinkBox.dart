@@ -15,6 +15,7 @@ class LinkBox extends StatelessWidget {
           splashColor: Colors.blue.withAlpha(30),
           onTap: () {
             if (item['type'] == 'screen') {
+              print(item['type_data']);
               Navigator.push(
                 context,
                 MaterialPageRoute(

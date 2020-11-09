@@ -1,8 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:provider/provider.dart';
+import 'package:schooly/ios/langugeDelegate.dart';
 import 'package:schooly/pages/WraperMain.dart';
 import 'package:schooly/providers/classes.provider.dart';
+import 'package:schooly/providers/events.provider.dart';
+import 'package:schooly/providers/gallery.provider.dart';
 import 'package:schooly/providers/login.provider.dart';
 import 'package:schooly/providers/mail.provider.dart';
 import 'package:schooly/providers/user.provider.dart';
@@ -15,6 +18,8 @@ void main() {
         ChangeNotifierProvider(create: (_) => UserProvider()),
         ChangeNotifierProvider(create: (_) => ClassProvider()),
         ChangeNotifierProvider(create: (_) => MailProvider()),
+        ChangeNotifierProvider(create: (_) => GalleryProvider()),
+        ChangeNotifierProvider(create: (_) => EventsProvider()),
       ],
       child: MyApp(),
     ),
@@ -30,6 +35,7 @@ class MyApp extends StatelessWidget {
       localizationsDelegates: [
         GlobalMaterialLocalizations.delegate,
         GlobalWidgetsLocalizations.delegate,
+        CupertinoLocalizationsDelegate()
       ],
       supportedLocales: [
         Locale("he", "IL"), // OR Locale('ar', 'AE') OR Other RTL locales

@@ -72,8 +72,9 @@ class _HomeWorkState extends State<HomeWork> {
               child: Icon(Icons.file_upload),
               backgroundColor: Colors.green,
               onTap: () async {
-                var filesPathsRes = await FilePicker.getMultiFilePath();
-                filesPaths = filesPathsRes.values.toList();
+                FilePickerResult filesPathsRes =
+                    await FilePicker.platform.pickFiles(allowMultiple: true);
+                filesPaths = filesPathsRes.paths.map((path) => path).toList();
                 classProviderHolder.updateFilesHomeWork(
                     currentClass, filesPaths);
 
